@@ -1,0 +1,18 @@
+<h1>Thanks {{firstName}}! Your order is complete</h1>
+<a href="/">Home</a>
+<div class="row">
+  <div class="order-details-card col-6">
+    <div>Order details</div>
+    <div>Order ID: {{_id}}</div>
+    <div>Stripe Charge ID: {{chargeId}}</div>
+    <div>Total: {{orderTotal}}</div>
+    <div>Shipping Address:</div>
+    <div>
+      {{address}}
+      {{city}}, {{state}} {{zipcode}}
+    </div>
+    <div>{{email}}</div>
+    <div><a href="{{receiptLink}}">Link to receipt </a></div>
+  </div>
+</div>
+

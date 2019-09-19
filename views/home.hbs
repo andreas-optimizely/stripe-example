@@ -1,0 +1,27 @@
+<div class="hero row">
+	<h1>Homepage</h1>
+</div>
+<div class="featured-products row">
+    {{#if productError}}
+      {{> errorMessage }}
+    {{ else }}
+      {{#each products}}
+        <div class="product-card col-md-4">
+          <div class="img-con" style="height: 20%;width: auto;">
+            <img src="{{this.image}}" class="img-fluid" style="height: 100%; width:auto;"/>
+          </div>
+          <div class="product-info row">
+            <div class="title col-12">{{this.name}}</div>
+            <div class="price col-12">${{this.price}}</div>
+          </div>
+          <div class="product-btn btn row">
+            <form method="post" action="/orders">
+              <input type="text" name="productId" value="{{this._id}}" hidden>
+              <input type="text" name="productPrice" value="{{this.price}}"hidden>
+              <input type="submit" value="Add to Cart" class="btn btn-primary col-xs-12">
+            </form>
+          </div>
+        </div>
+      {{/each}}
+    {{/if}}
+</div>

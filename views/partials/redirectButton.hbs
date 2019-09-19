@@ -1,0 +1,23 @@
+<!-- Stripe -->
+  <div class="row">
+    <div class="col-lg-4 col-sm-12">
+    <div id="payNow" class="btn btn-primary">Pay Now</div>
+    </div>
+    
+  </div>
+
+  <!-- Example using Stripe checkout-->
+  <script>
+  	var stripe = Stripe('{{stripeKey}}');
+    document.getElementById('payNow').addEventListener('click', function(){
+      stripe.redirectToCheckout({
+        sessionId: '{{stripeSession}}'
+      }).then(function (result) {
+        // If `redirectToCheckout` fails due to a browser or network
+         // error, display the localized error message to your customer
+      // using `result.error.message`.
+        console.log(result)
+      });
+    })
+  	
+  </script>
