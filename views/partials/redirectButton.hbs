@@ -1,8 +1,13 @@
 <!-- Stripe -->
-  <div class="row">
-    <div class="col-lg-4 col-sm-12">
-    <div id="payNow" class="btn btn-primary">Pay Now</div>
+  <div class="row mt-4">
+    <div class="col-12">
+      <div class="col-4" id="errorMessage" style="color: red; display: none;">
+      </div>
+      <div class="col-4">
+        <div id="payNow" class="btn btn-secondary" style="pointer-events:none;">Pay Now</div>
+      </div>
     </div>
+    
     
   </div>
 
@@ -13,9 +18,10 @@
       stripe.redirectToCheckout({
         sessionId: '{{stripeSession}}'
       }).then(function (result) {
-        // If `redirectToCheckout` fails due to a browser or network
-         // error, display the localized error message to your customer
-      // using `result.error.message`.
+      if(result.error.message){
+        var errorElem = document.getElementById('errorMessage');
+        return errorElem.innerText = result.error.errorMessage
+      }
         console.log(result)
       });
     })

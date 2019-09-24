@@ -42,11 +42,6 @@ var data = [
                 'name': 'Aloha Blue',
                 'price': 125,
                 'image': '/images/light-blue.jpeg'
-            },
-            {
-                'name': 'Johnny Hawaii',
-                'price': 105,
-                'image': '/images/light-blue.jpeg'
             }
         ]
     }
