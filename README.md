@@ -21,14 +21,15 @@ The appication has four key use facing views:
 **Environment Setup**
 1. Clone this repo
 2. Create a file called `.env` with or add the following env variables based on your own account:
-- _optional_ Replace [line 13](https://github.com/andreas-optimizely/stripe-example/blob/master/index.js#L13) with your own Optimizely ([Free Optimizely Account Sign Up](https://www.optimizely.com/rollouts/)) if you want try out the feature flag feature
-- STRIPE_TOKEN
-- STRIPE_SECRET_KEY
+ - _optional_ Replace [line 13](https://github.com/andreas-optimizely/stripe-example/blob/master/index.js#L13) with your own Optimizely ([Free Optimizely Account Sign Up](https://www.optimizely.com/rollouts/)) if you want try out the feature flag feature
+ - STRIPE_TOKEN
+ - STRIPE_SECRET_KEY
 
 **Setup app**
-2. `npm install`
-3. `npm start` (this will seed the local db instance with product data)
-4. Visit [http://localhost:8080](http://localhost:8080)
+
+1. `npm install`
+2. `npm start` (this will seed the local db instance with product data)
+3. Visit [http://localhost:8080](http://localhost:8080)
 
 ## How I approached the problem
 
