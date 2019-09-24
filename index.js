@@ -10,12 +10,12 @@ const express = require('express'),
 
 // setting up optimizely
 const optimizely = optimizelyExpress.initialize({
-  sdkKey: process.env.SDK_KEY,
+  sdkKey: 'LT7jLfZuaKSp998s9SDCRK', // or process.env.SDK_KEY,
   datafileOptions: {
     autoUpdate: true,
-    updateInterval: 1000
+    updateInterval: 6000
   },
-  logLevel: 'debug'
+  logLevel: 'info'
 });
 
 // Setting up app

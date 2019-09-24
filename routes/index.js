@@ -11,6 +11,24 @@ const router = express.Router();
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
+// Helper to update the order total on adding items to cart
+let updateOrderTotal = (orderId) => {
+  db.Order.find({_id:orderId}).then(order => {
+    let orderTotal = 0;
+    // TODO query all productIds
+    db.Product.find({}).then(products => {
+      products.forEach(product, ()=>{
+        orderTotal += product.price;
+      })
+      return orderTotal;
+    })
+  }).catch( err => {
+    console.log('Error finding order');
+
+  })
+};
+
+
 // Homepage Route
 router.get('/', (req, res, next) => {
   let renderObject = {
@@ -37,13 +55,33 @@ router.get('/products/:id', (req,res,next) => {
 
 // Endpoint to create an order
 router.post('/orders', (req, res, next ) => {
-  //Order details I want to save
+  
   let orderDetails = {
     productIds: [req.body.productId],
     status: 'new',
     orderTotal: req.body.productPrice
   }
-  
+  // Check to see if an order has already been created
+  // If so, add to existing order
+  if(req.cookies['order_id']){
+
+    let orderId = req.cookies['order_id'];
+    let productId = req.body.productId;
+
+    // Updating order object
+    db.Order.findByIdAndUpdate(orderId,{$push:{productIds:productId}},{upsert:true},(err, updatedDoc)=>{
+      if (err) {
+        console.log('ERROR saving object ', err);
+       res.redirect('/')
+       return 
+      }
+      console.log('Updated doc ', updatedDoc);
+      console.log('Added item to order!')
+      res.redirect('/cart')
+      return
+    })
+  };
+
   // Create a new order in DB
   let orderData = new db.Order(orderDetails);
   orderData.save().then((order) => {
@@ -72,19 +110,41 @@ router.get('/cart', (req, res, next) => {
         products: products,
         orderTotal: orderTotal
       });
+      return
 
     }).catch( err => {
       console.log(err);
-      res.redirect('/');
+      res.status(500).redirect('/');
+      return
     })
   }).catch( err => {
     console.log(err);
-    res.redirect('/');
+    res.status(500).redirect('/');
+    return
   })
 });
 
 router.get('/fetch-session', (req, res,next) =>{
 });
+
+// Endpoint to update order with shipping data
+router.post('/update-order', (req, res, next) => {
+  console.log('incoming update order post');
+  console.log(req.body);
+  db.Order.findOneAndUpdate({_id: req.body.orderId}, req.body, {upsert:true}, (err, doc) => {
+    if(err){
+      console.log('There was an error updating order ', err);
+      res.status(500).send(err);
+      return
+    }
+    else {
+      console.log('Successfully updated order');
+      res.status(200).send('Updated Order');
+      return
+    }
+  })
+});
+
 
 // Endpoint to handle ordering 
 router.post('/checkout', (req, res, next) => {
@@ -103,7 +163,7 @@ router.post('/checkout', (req, res, next) => {
     // Checking to see if there was an error from stripe
     if(err){
       console.log('ERROR ', err)
-      return res.send(500)
+      return res.status(500).send(err);
     }
     // if no error, then lets go ahead an update the order with the rest of the data entered
     let updateOrderData = {
@@ -122,9 +182,9 @@ router.post('/checkout', (req, res, next) => {
     db.Order.findOneAndUpdate({_id:orderId},updateOrderData,{upsert:true},(err, updatedDoc)=>{
       if (err) {
         console.log('ERROR saving object ', err);
-       return res.send(500, { error: err })
+       return res.status(500).send(err);
       }
-      res.redirect('/thank-you')  
+      res.redirect('/thank-you'); 
     })
     
   });
@@ -132,8 +192,9 @@ router.post('/checkout', (req, res, next) => {
 });
 
 router.get('/checkout', (req, res, next) => {
-  // TODO - generate another userId and store that somewhere
-  let userId = '1234151512';
+  
+  //Generating a random user id to use for bucketing with Optimizely
+  let userId = uuid();
   let orderId = req.cookies['order_id'];
   let orderTotal;
   
@@ -162,15 +223,22 @@ router.get('/checkout', (req, res, next) => {
       db.Product.find({
         _id: { $in: order[0].productIds}
       }).then(products => {
+        let productsInStripeFormat = [];
+        
+        products.forEach((product) => {
+          console.log('in product loop');
+          productsInStripeFormat.push({
+            name: product.name,
+            images: [product.image],
+            amount: product.price*100,
+            currency: 'usd',
+            quantity: 1
+        })
+          console.log(productsInStripeFormat);
+        })
           stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-              line_items: [{
-                name: products[0].name,
-                images: [products[0].image],
-                amount: orderTotal*100,
-                currency: 'usd',
-                quantity: 1,
-            }],
+              line_items: productsInStripeFormat,
             success_url: 'http://localhost:8080/thank-you?redirect=true',
             cancel_url: 'https://example.com/cancel',
           }, 
@@ -178,23 +246,30 @@ router.get('/checkout', (req, res, next) => {
             if(err){
               console.log(err);
               console.log('THERE WAS AN ERROR');
+              res.status(500).send('THERE WAS AN ERROR');
               return
             }
             // Pass stripe session token to the client
+            console.log('Got stripe session ', session.id);
             renderObject.stripeSession = session.id;
             res.render('checkout', renderObject)
+            return 
           })
 
       }).catch(err => {
         console.log(err);
+        res.send('THERE WAS AN ERROR');
+        return 
       })
     }
-    // If the redirect feature isnt enabled just render the checkout
-    res.render('checkout', renderObject)
+    else {
+      // If the redirect feature productsInStripeFormatt enabled just render the checkout
+      res.render('checkout', renderObject)  
+    }
   }).catch( err => {
     // if there are any errors lets just redirect to cart
     console.log(err);
-    res.redirect('/cart');
+    // return res.redirect('/cart');
   })
 
 });
@@ -255,7 +330,7 @@ router.post('/webhook', bodyParser.text({type: '*/*'}), (req, res) =>{
     console.log(event)
     res.json({received: true});
     res.status(200).send('All done');
-  }  
+  }
 
 })
-module.exports = router
+module.exports = router;
